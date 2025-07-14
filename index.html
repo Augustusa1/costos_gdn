@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Costos de Distribución</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .active-tab {
+            background-color: #b91c1c; /* red-700 */
+            color: white;
+            border-color: #b91c1c;
+        }
+        .inactive-tab {
+            background-color: white;
+            color: #374151; /* gray-700 */
+            border-color: #d1d5db; /* gray-300 */
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Encabezado -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Análisis de Costos de Distribución</h1>
+            <p class="text-lg text-gray-600 mt-2">Evolución de costos, ventas y eficiencia por plaza (G22-25)</p>
+        </header>
+
+        <!-- Navegación de Plazas -->
+        <nav id="nav-plazas" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+            <!-- Los botones se generarán con JS -->
+        </nav>
+
+        <!-- Contenido Principal -->
+        <main id="main-content" class="bg-white p-6 rounded-xl shadow-lg">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Sección del Gráfico -->
+                <div class="lg:col-span-2 card p-4 md:p-6">
+                    <h2 id="chart-title" class="text-xl font-bold text-gray-700 mb-4"></h2>
+                    <div class="relative h-64 md:h-96">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Sección de Análisis y Métricas -->
+                <div class="flex flex-col gap-6">
+                    <!-- Tarjetas de Costo Unitario -->
+                    <div class="card p-4 md:p-6">
+                        <h3 class="text-lg font-bold text-red-700 mb-3">🎯 Objetivo: Costo Unitario (Bs/Kg)</h3>
+                        <div id="unit-cost-cards" class="space-y-3">
+                            <!-- Las tarjetas de costo unitario se generarán aquí -->
+                        </div>
+                    </div>
+                    <!-- Tarjeta de Análisis -->
+                    <div class="card p-4 md:p-6 flex-grow">
+                        <h3 class="text-lg font-bold text-red-700 mb-3">📊 Análisis Simple</h3>
+                        <p id="analysis-text" class="text-gray-600 text-base">
+                            <!-- El texto de análisis se generará aquí -->
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center mt-8 text-sm text-gray-500">
+            <p>Presentación generada para Jefaturas de Área. Datos correspondientes a las gestiones 2022-2025.</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS ---
+        // Datos extraídos de la imagen proporcionada
+        const distributionData = {
+            'NAL': {
+                title: 'Nacional',
+                periods: ['G22-23', 'G23-24', 'G24-25'],
+                costs: [4913817.13, 5466938.38, 5500202.84],
+                sales: [12000750.33, 13217073.16, 13663847.22],
+                unitCost: [0.409459158, 0.413627004, 0.40253691],
+                analysis: "A nivel nacional, se observa un crecimiento sostenido en el volumen de ventas. Aunque los costos totales también aumentan, el costo unitario se ha mantenido relativamente estable, con una ligera mejora en la última gestión. El desafío es continuar optimizando la logística para reducir este indicador clave a pesar del aumento de volumen."
+            },
+            'SCZ': {
+                title: 'Santa Cruz',
+                periods: ['G22-23', 'G23-24', 'G24-25'],
+                costs: [2242026.36, 2456638.58, 2497194.67],
+                sales: [4750703.47, 5441661.15, 6327510.28],
+                unitCost: [0.471935657, 0.45145012, 0.394656754],
+                analysis: "Santa Cruz muestra un desempeño excelente. A pesar del aumento en costos totales, el volumen de ventas ha crecido a un ritmo mayor. Esto se refleja en una reducción constante y significativa del costo unitario por kilogramo, demostrando una gran eficiencia operativa."
+            },
+            'CBBA': {
+                title: 'Cochabamba',
+                periods: ['G22-23', 'G23-24', 'G24-25'],
+                costs: [673989.00, 748787.19, 769236.62],
+                sales: [1440595.20, 1552590.39, 1668413.28],
+                unitCost: [0.467854538, 0.482282512, 0.461058799],
+                analysis: "Cochabamba presenta un comportamiento estable. Hubo un ligero aumento en el costo unitario en la gestión G23-24, pero se corrigió en G24-25, volviendo a niveles iniciales. El crecimiento en ventas es constante, y el reto es que los costos no crezcan al mismo ritmo."
+            },
+            'LPZ': {
+                title: 'La Paz',
+                periods: ['G22-23', 'G23-24', 'G24-25'],
+                costs: [1913569.37, 2168166.72, 2128810.95],
+                sales: [5465709.60, 5919102.68, 5380082.73],
+                unitCost: [0.350104472, 0.366299901, 0.395683682],
+                analysis: "La Paz es un punto de atención. Mientras los costos se han mantenido altos, el volumen de ventas disminuyó en la última gestión. Esto ha provocado un aumento constante en el costo unitario. Se requiere un análisis para optimizar rutas o renegociar tarifas de transporte."
+            },
+            'SUCRE': {
+                title: 'Sucre',
+                periods: ['G22-23', 'G23-24', 'G24-25'],
+                costs: [37023.05, 42006.01, 46554.97],
+                sales: [251710.5511, 196864.7743, 150761.1184],
+                unitCost: [0.147085789, 0.213374918, 0.308799593],
+                analysis: "Sucre muestra una tendencia preocupante. La drástica caída en el volumen de ventas, combinada con un aumento en los costos, ha duplicado el costo unitario en dos años. Es crucial investigar las causas de la baja en ventas para revertir esta situación."
+            },
+            'TDD': {
+                title: 'Trinidad',
+                periods: ['G22-23', 'G23-24', 'G24-25'],
+                costs: [47209.34, 51339.88, 58405.63],
+                sales: [92031.5115, 106854.1712, 137079.8074],
+                unitCost: [0.512969309, 0.480466769, 0.426070237],
+                analysis: "Trinidad, similar a Santa Cruz, presenta una evolución muy positiva. El volumen de ventas está en claro ascenso, lo que ha permitido absorber los incrementos de costos y lograr una reducción sostenida y notable en el costo unitario. Es un modelo de eficiencia a seguir."
+            }
+        };
+
+        // --- LÓGICA DE LA APLICACIÓN ---
+        const navContainer = document.getElementById('nav-plazas');
+        const chartTitleEl = document.getElementById('chart-title');
+        const analysisTextEl = document.getElementById('analysis-text');
+        const unitCostContainer = document.getElementById('unit-cost-cards');
+        const chartCanvas = document.getElementById('distributionChart');
+        let distributionChart;
+
+        // Función para actualizar la vista (gráfico, texto, etc.)
+        function updateView(plazaKey) {
+            const data = distributionData[plazaKey];
+
+            // Actualizar título y análisis
+            chartTitleEl.textContent = `Evolución de Costos vs. Ventas en ${data.title}`;
+            analysisTextEl.textContent = data.analysis;
+
+            // Actualizar las pestañas de navegación
+            document.querySelectorAll('#nav-plazas button').forEach(button => {
+                if (button.dataset.plaza === plazaKey) {
+                    button.className = 'px-4 py-2 text-sm md:text-base font-semibold rounded-lg border-2 transition-colors duration-200 active-tab';
+                } else {
+                    button.className = 'px-4 py-2 text-sm md:text-base font-semibold rounded-lg border-2 transition-colors duration-200 inactive-tab hover:bg-red-100';
+                }
+            });
+
+            // Actualizar tarjetas de costo unitario
+            unitCostContainer.innerHTML = '';
+            data.periods.forEach((period, index) => {
+                const cost = data.unitCost[index];
+                const prevCost = index > 0 ? data.unitCost[index - 1] : null;
+                
+                let trendIcon = '';
+                let textColor = 'text-gray-700';
+
+                if (prevCost) {
+                    if (cost < prevCost) {
+                        trendIcon = '<span class="text-green-500 ml-2">▼</span>'; // Flecha hacia abajo para mejora
+                        textColor = 'text-green-600';
+                    } else if (cost > prevCost) {
+                        trendIcon = '<span class="text-red-500 ml-2">▲</span>'; // Flecha hacia arriba para empeoramiento
+                        textColor = 'text-red-600';
+                    } else {
+                        trendIcon = '<span class="text-gray-500 ml-2">▬</span>'; // Sin cambio
+                    }
+                }
+
+                const cardHtml = `
+                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                        <span class="font-medium text-gray-600">${period}:</span>
+                        <span class="font-bold text-lg ${textColor}">${cost.toFixed(4)} Bs/Kg ${trendIcon}</span>
+                    </div>
+                `;
+                unitCostContainer.innerHTML += cardHtml;
+            });
+
+            // Actualizar el gráfico
+            if (distributionChart) {
+                distributionChart.destroy();
+            }
+
+            distributionChart = new Chart(chartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: data.periods,
+                    datasets: [
+                        {
+                            label: 'Venta (Kg)',
+                            data: data.sales,
+                            backgroundColor: 'rgba(220, 38, 38, 0.6)', // red-600
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y-sales',
+                            order: 2
+                        },
+                        {
+                            label: 'Costos T. (Bs)',
+                            data: data.costs,
+                            backgroundColor: 'rgba(107, 114, 128, 0.8)', // gray-500
+                            borderColor: 'rgba(55, 65, 81, 1)',
+                            type: 'line',
+                            yAxisID: 'y-costs',
+                            tension: 0.3,
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        'y-sales': {
+                            type: 'linear',
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Venta (Kg)',
+                                color: 'rgba(220, 38, 38, 1)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        },
+                        'y-costs': {
+                            type: 'linear',
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Costos (Bs)',
+                                color: 'rgba(55, 65, 81, 1)'
+                            },
+                            grid: {
+                                drawOnChartArea: false, // only want the grid lines for one axis to show up
+                            },
+                             ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('es-BO', { style: 'decimal' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- INICIALIZACIÓN ---
+        window.onload = () => {
+            // Crear botones de navegación
+            const plazas = Object.keys(distributionData);
+            plazas.forEach(plazaKey => {
+                const button = document.createElement('button');
+                button.textContent = distributionData[plazaKey].title;
+                button.dataset.plaza = plazaKey;
+                button.className = 'px-4 py-2 text-sm md:text-base font-semibold rounded-lg border-2 transition-colors duration-200 inactive-tab hover:bg-red-100';
+                button.onclick = () => updateView(plazaKey);
+                navContainer.appendChild(button);
+            });
+
+            // Cargar la vista inicial (Nacional)
+            updateView('NAL');
+        };
+    </script>
+</body>
+</html>
