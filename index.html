@@ -50,6 +50,15 @@
         .projected-goal {
             color: #1d4ed8; /* blue-700 */
         }
+        /* Estilos para las listas dentro del análisis */
+        #analysis-text ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+        #analysis-text li {
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -91,7 +100,7 @@
                     </div>
                     <div class="card p-4 md:p-6 flex-grow">
                         <h3 class="text-lg font-bold text-red-700 mb-3">📊 Análisis Simple</h3>
-                        <p id="analysis-text" class="text-gray-600 text-base"></p>
+                        <div id="analysis-text" class="text-gray-600 text-base"></div>
                     </div>
                 </div>
             </div>
@@ -115,11 +124,21 @@
                 'NAL': {
                     transporte: {
                         unitCost: [0.41, 0.41, 0.40], objectives: [0.40, 0.39, 0.39, 0.41],
-                        analysis: "El costo de transporte nacional mejoró en G24-25, pero se ha mantenido cerca del límite del objetivo. La proyección para G25-26 es de 0.41, lo que indica un desafío para mantener la eficiencia con el crecimiento esperado."
+                        analysis: `
+                            <ul>
+                                <li>Mejora en costo durante G24-25, cumpliendo el objetivo.</li>
+                                <li>Se ha mantenido cerca del límite del objetivo.</li>
+                                <li>Proyección para G25-26 es de 0.41, indicando un desafío para mantener la eficiencia.</li>
+                            </ul>`
                     },
                     almacenaje: {
                         unitCost: [0.38, 0.38, 0.49], objectives: [0.38, 0.38, 0.58, 0.38],
-                        analysis: "Almacenaje cumplió sus metas, pero con un alza de costo en G24-25. El objetivo proyectado para G25-26 es un ambicioso 0.38, lo que exige una fuerte optimización para revertir la tendencia reciente."
+                        analysis: `
+                            <ul>
+                                <li>Se cumplieron las metas, pero con un alza de costo en G24-25.</li>
+                                <li>El objetivo proyectado para G25-26 es un ambicioso 0.38.</li>
+                                <li>Se exige una fuerte optimización para revertir la tendencia reciente.</li>
+                            </ul>`
                     }
                 },
                 'SCZ': {
@@ -128,14 +147,14 @@
                         analysis:
                             `
                             <ul>
-                                <li>Flete y acarreo incrementa 20% </li>
-                                <li>Mano de obra operativa y transferida incrementa un 8% </li>
-                                <li>Gastos de alimentación incrementa un 15% </li>
-                                <li>Ropa de trabajo incrementa un 40% </li>
-                                <li>Gastos médicos, conectividad y comunicaciones; gastos generales incrementa 5% </li>
-                                <li>Servicios externos incrementa un 10% </li>
-                                <li>Todo lo referente a materiales y repuestos incrementa 30% </li>
-                                <li>Envases 20% </li>
+                                <li>Flete y acarreo incrementa 20%</li>
+                                <li>Mano de obra operativa y transferida incrementa un 8%</li>
+                                <li>Gastos de alimentación incrementa un 15%</li>
+                                <li>Ropa de trabajo incrementa un 40%</li>
+                                <li>Gastos médicos, conectividad y comunicaciones; gastos generales incrementa 5%</li>
+                                <li>Servicios externos incrementa un 10%</li>
+                                <li>Todo lo referente a materiales y repuestos incrementa 30%</li>
+                                <li>Envases 20%</li>
                             </ul>
                             `
                     },
@@ -157,7 +176,12 @@
                 'LPZ': {
                     transporte: {
                         unitCost: [0.35, 0.37, 0.40], objectives: [0.30, 0.35, 0.37, 0.40],
-                        analysis: "Transporte en La Paz es un área crítica, con incumplimientos sistemáticos. La meta proyectada de 0.40 para G25-26 es igual al costo real de la última gestión, indicando la urgencia de frenar el alza."
+                        analysis: `
+                            <ul>
+                                <li>Área crítica con incumplimientos sistemáticos de objetivos.</li>
+                                <li>La meta proyectada de 0.40 para G25-26 es igual al costo real de la última gestión.</li>
+                                <li>Indica la urgencia de frenar la tendencia al alza.</li>
+                            </ul>`
                     },
                     almacenaje: {
                         unitCost: [0.28, 0.30, 0.34], objectives: [0.27, 0.28, 0.35, 0.30],
@@ -208,7 +232,7 @@
             const areaTitle = areaKey.charAt(0).toUpperCase() + areaKey.slice(1);
 
             chartTitleEl.textContent = `Rendimiento Histórico de ${areaTitle} en ${plazaTitle}`;
-            analysisTextEl.textContent = data.analysis;
+            analysisTextEl.innerHTML = data.analysis;
 
             document.querySelectorAll('#nav-plazas button').forEach(button => {
                 button.className = `px-4 py-2 text-sm md:text-base font-semibold rounded-lg border-2 transition-colors duration-200 ${button.dataset.plaza === plazaKey ? 'active-tab' : 'inactive-tab hover:bg-red-100'}`;
@@ -218,7 +242,6 @@
             btnAlmacenaje.className = `px-6 py-2 font-semibold rounded-md transition-colors duration-200 ${areaKey === 'almacenaje' ? 'active-area-tab' : 'inactive-area-tab hover:bg-indigo-200'}`;
 
             unitCostContainer.innerHTML = '';
-            // Render historical cards
             appData.common.periods.forEach((period, index) => {
                 const cost = data.unitCost[index];
                 const objective = data.objectives[index];
@@ -237,7 +260,6 @@
                 unitCostContainer.innerHTML += cardHtml;
             });
 
-            // Render projection card if it exists
             const projectionObjective = data.objectives[3];
             if (projectionObjective !== null && projectionObjective !== undefined) {
                 const cardHtml = `
@@ -254,22 +276,39 @@
             if (distributionChart) {
                 distributionChart.destroy();
             }
+
+            // =========================================================
+            // INICIO DE CAMBIOS EN EL GRÁFICO
+            // =========================================================
+
+            // 1. Calcular el rango del eje Y dinámicamente
+            const allValues = [...data.unitCost, ...data.objectives.slice(0, 3)];
+            const dataMin = Math.min(...allValues);
+            const dataMax = Math.max(...allValues);
+            const yAxisPadding = (dataMax - dataMin) * 0.1; // Añadir 10% de margen
+
+            // Redondear para tener valores de eje más limpios
+            const yMin = Math.floor((dataMin - yAxisPadding) * 10) / 10;
+            const yMax = Math.ceil((dataMax + yAxisPadding) * 10) / 10;
+
             distributionChart = new Chart(chartCanvas, {
                 type: 'bar',
                 data: {
-                    labels: appData.common.periods, // Only historical periods
+                    labels: appData.common.periods,
                     datasets: [{
                         label: 'Costo Unit. Real (Bs/Kg)',
-                        data: data.unitCost, // Historical costs
+                        data: data.unitCost,
                         backgroundColor: (ctx) => {
                             const cost = data.unitCost[ctx.dataIndex];
                             const objective = data.objectives[ctx.dataIndex];
                             return cost <= objective ? 'rgba(22, 163, 74, 0.7)' : 'rgba(220, 38, 38, 0.7)';
                         },
-                        order: 2
+                        order: 2,
+                        // 2. Hacer las barras más delgadas
+                        barPercentage: 0.5,
                     }, {
                         label: 'Costo Unit. Objetivo (Bs/Kg)',
-                        data: data.objectives.slice(0, 3), // Only historical objectives
+                        data: data.objectives.slice(0, 3),
                         borderColor: 'rgba(59, 130, 246, 1)',
                         type: 'line',
                         tension: 0.1,
@@ -281,7 +320,15 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: false, title: { display: true, text: 'Costo Unitario (Bs/Kg)' } }
+                        y: {
+                            // 3. Aplicar el mínimo y máximo dinámico al eje Y
+                            min: yMin,
+                            max: yMax,
+                            title: { 
+                                display: true, 
+                                text: 'Costo Unitario (Bs/Kg)' 
+                            }
+                        }
                     },
                     plugins: {
                         tooltip: {
@@ -292,6 +339,9 @@
                     }
                 }
             });
+            // =========================================================
+            // FIN DE CAMBIOS EN EL GRÁFICO
+            // =========================================================
         }
 
         function handlePlazaClick(plazaKey) {
